@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import time
+import subprocess
+from argparse import ArgumentParser
+
+argParser = ArgumentParser(description = 'Run simple jobs on condor')
+argParser.add_argument('executable', metavar = 'EXEC', help = 'Executable to run.')
+argParser.add_argument('--job-args', '-j', metavar = 'ARGS', dest = 'jobArgs', nargs = '+', help = 'Arguments for each job.')
+argParser.add_argument('--arg-file', '-a', metavar = 'PATH', dest = 'argFile', default = '', help = 'File with a list of arguments. Each line of the file is the argument to one job.')
+argParser.add_argument('--common-pre-args', '-e', metavar = 'ARGS', dest = 'commonPreargs', default = '', help = 'Common arguments placed before job arguments.')
+argParser.add_argument('--common-post-args', '-t', metavar = 'ARGS', dest = 'commonPostargs', default = '', help = 'Common arguments placed after job arguments.')
+argParser.add_argument('--auxiliary-input', '-x', metavar = 'PATHS', dest = 'auxInput', nargs = '+', default = [], help = 'Auxiliary input files.')
+argParser.add_argument('--output', '-o', metavar = 'PATHS', dest = 'outputFiles', nargs = '+', default = [], help = 'Output files/directories to transfer back.')
+argParser.add_argument('--outputPath', '-p', metavar = 'ARGS', dest = 'outputPath', default = '', help = 'Output path on the submitter machine to receive the output files.')
+argParser.add_argument('--num-jobs', '-n', metavar = 'NUM', dest = 'numJobs', default = 0, help = 'Number of jobs per job argument.')
+argParser.add_argument('--task-name', metavar='ARGS', dest='taskName', default='', help='Name of task to be created')
+
+args = argParser.parse_args()
+sys.argv = []
+
+if args.jobArgs is not None and args.argFile != '':
+    print '-j and -a options cannot be used together.'
+    sys.exit(1)
+
+execdir = os.path.dirname(os.path.realpath(__file__))
+if args.taskName != '':
+    logdir = os.path.expanduser('~/cms/logs/'+args.taskName)
+else:
+    logdir = '/tmp/' + str(int(time.time()))
+if not os.path.exists(logdir):
+    os.mkdir(logdir)
+
+with open(logdir + '/env.sh', 'w') as envfile:
+    for key, value in os.environ.items():
+        if key.startswith('BASH_FUNC_'):
+            envfile.write(key.replace('BASH_FUNC_', '') + ' ' + value[2:] + '\n')
+            envfile.write('export -f ' + key.replace('BASH_FUNC_', '').replace('()', '') + '\n')
+        else:
+            envfile.write('export ' + key + '="' + value.replace('"', '\\"') + '"\n')
+
+jdlBase = 'executable = ' + execdir + '/condor-run.exec\n'
+jdlBase += 'universe = vanilla\n'
+jdlBase += 'should_transfer_files = YES\n'
+jdlBase += 'transfer_executable = True\n'
+jdlBase += 'log = ' + logdir + '/$(Cluster).$(Process).log\n'
+jdlBase += 'output = ' + logdir + '/$(Cluster).$(Process).out\n'
+jdlBase += 'error = ' + logdir + '/$(Cluster).$(Process).err\n'
+jdlBase += 'input = /dev/null\n'
+#jdlBase += 'requirements = (UidDomain == "cmsaf.mit.edu") && Arch == "X86_64" && OpSysAndVer == "SL6"\n'
+jdlBase += 'requirements = Arch == "X86_64" && OpSysAndVer == "SL6"\n'
+jdlBase += 'transfer_input_files = ' + logdir + '/env.sh'
+for aux in args.auxInput:
+    jdlBase += ',' + aux
+jdlBase += '\n'
+if args.outputFiles is not None:
+    jdlBase += 'transfer_output_files = ' + ','.join(args.outputFiles) + '\n'
+if args.outputPath != '':
+    jdlBase += 'transfer_output_remaps = "' + args.outputPath + '"\n'
+#jdlBase += 'accounting_group = group_t3mit.urgent\n'
+jdlBase += 'accounting_group = group_t3mit\n'
+jdlBase += 'use_x509userproxy = True\n'
+jdlBase += 'x509userproxy = /tmp/x509up_u{0}\n'.format(os.getuid())
+
+if args.jobArgs is not None:
+    arguments = args.jobArgs
+
+elif args.argFile != '':
+    arguments = []
+    with open(args.argFile) as argFile:
+        for line in argFile:
+            arguments.append(line.strip())
+else:
+    arguments = ['']
+
+numJobs = args.numJobs
+if numJobs == 0:
+    numJobs = 1
+
+for jobArg in arguments:
+    jdl = jdlBase
+    jdl += 'arguments = "' + args.executable
+    #jdl += 'arguments = "' + os.path.realpath(args.executable)
+    if args.commonPreargs:
+        jdl += ' ' + args.commonPreargs
+    if jobArg:
+        jdl += ' ' + jobArg
+    if args.commonPostargs:
+        jdl += ' ' + args.commonPostargs
+    if args.numJobs:
+        jdl += ' $(Process)'
+    jdl += '"\n'
+    jdl += 'queue ' + str(numJobs) + '\n'
+
+    proc = subprocess.Popen(['condor_submit'], stdin = subprocess.PIPE)
+    proc.communicate(jdl)
+
+print 'Logdir is', logdir
