@@ -13,6 +13,7 @@
 #include "PandaCore/Tools/interface/DataTools.h"
 #include "PandaCore/Tools/interface/JERReader.h"
 #include "PandaTree/Objects/interface/Event.h"
+#include "PandaTree/Objects/interface/HLTObjectStore.h"
 
 //Boost
 #include <boost/property_tree/ptree.hpp>
