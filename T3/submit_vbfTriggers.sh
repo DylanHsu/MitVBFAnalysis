@@ -34,14 +34,14 @@ tar  --exclude-vcs -chzf "${receptacle}/CMSSW_${jobName}.tgz" src/PandaAnalysis 
 
 # Set up libs that the job will use to run
 # Need the shell script and the CMSSW code
-to_run="MitVBFAnalysis/T3/condor-run ./batch_vbfTriggers.sh"
+to_run="$CMSSW_BASE/src/MitVBFAnalysis/T3/condor-run ./batch_vbfTriggers.sh"
 libs="${receptacle}/CMSSW_${jobName}.tgz $CMSSW_BASE/src/MitVBFAnalysis/T3/batch_vbfTriggers.sh"
 jobNumber=0
 cd $CMSSW_BASE/src
 
 # Take the list of input files and chop it up into many smaller ones,
 # then write the list of the smaller pieces to jobFileSets.txt
-split -a 6 -l 10 $listOfDataFiles -d ${receptacle}/${jobName}/jobFiles_
+split -a 6 -l 4 $listOfDataFiles -d ${receptacle}/${jobName}/jobFiles_
 ls ${receptacle}/${jobName}/jobFiles_* > ${receptacle}/${jobName}/jobFileSets.txt
 
 # Loop over jobFileSets and submit a job for each set of N files

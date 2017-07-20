@@ -21,7 +21,7 @@
 // Hardcoded bin settings
   double pi=TMath::Pi();
   //const int nBinsMetOnly=59; double metOnlyBins[nBinsMetOnly+1]={0,5,10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 350, 400, 500, 600, 700, 800, 1000, 1200, 1500};
-  const int nBinsMetOnly=52; double metOnlyBins[nBinsMetOnly+1]={0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 220, 240, 260, 280, 300, 350, 400, 450, 500, 600, 700, 800, 1000, 1200};
+  const int nBinsMetOnly=44; double metOnlyBins[nBinsMetOnly+1]={0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 220, 240, 260, 280, 300, 350, 400, 450, 500, 600, 700, 800, 1000, 1200};
   //const int nBinsMetOnly=36; double metOnlyBins[nBinsMetOnly+1]={0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 250, 300, 350, 400, 600, 1000, 1500};
   //const int nBinsMet=7; double metBins[nBinsMet+1]={100,150,200,250,300,400,800,1500};
   const int nBinsMet=7; double metBins[nBinsMet+1]={100,125,150,175,200,250,300,400};
@@ -45,8 +45,13 @@ void plotEfficiency(
   TString mode="monojet", // (monojet|vbf)
   bool type1=false,
   TString extra_string="nice",
-  int fitFunction=1 // 1=tanh, 2=arctan, 3=erf
+  int fitFunction=1 // 1=tanh, 2=arctan, 3=erf, 4=generalized logistic
 ) {
+  TString fitFunctionName;
+  if     (fitFunction==1) fitFunctionName="tanh"; 
+  else if(fitFunction==2) fitFunctionName="arctan"; 
+  else if(fitFunction==3) fitFunctionName="erf"; 
+  else if(fitFunction==4) fitFunctionName="glf"; 
   TFile *inputFile = TFile::Open(inputFilePath, "READ");
   // set up input tree
   TTree *effTree = (TTree*) inputFile->Get("effTree");
@@ -380,21 +385,20 @@ void plotEfficiency(
   if     (fitFunction==1) { f_sigmoid = new TF1("sigmoidFit", "[2]*0.5*(1 + TMath::TanH( [0]*( x-[1] )))", 0, 1500); f_sigmoid->SetLineColor(kGreen); } 
   else if(fitFunction==2) { f_sigmoid = new TF1("sigmoidFit", "[2]*(0.5 + 1./TMath::Pi()*TMath::ATan( TMath::Pi()*0.5*[0]*( x-[1] )))", 0, 1500); f_sigmoid->SetLineColor(kRed); }
   else if(fitFunction==3) { f_sigmoid = new TF1("sigmoidFit", "[2]*0.5*(1+TMath::Erf( TMath::Sqrt(TMath::Pi())*0.5*[0]*( x-[1] )))", 0, 1500); f_sigmoid->SetLineColor(kOrange+4); }
-  else if(fitFunction==4) { f_sigmoid = new TF1("sigmoidFit", "[2]*pow([3]+[4]*TMath::Exp(-[0]*(x-[1])),-1./[5])", 0, 1500); f_sigmoid->SetLineColor(kMagenta); }
+  else if(fitFunction==4) { f_sigmoid = new TF1("sigmoidFit", "[2]*pow(1+[3]*TMath::Exp(-[0]*(x-[1])),-1./[4])", 0, 1500); f_sigmoid->SetLineColor(kMagenta); }
   if(fitFunction==1 || fitFunction==2 || fitFunction==3) {
     f_sigmoid->SetParNames("k", "E_{c}","#varepsilon_{obs}");
-    f_sigmoid->SetParameter(0,0.005); f_sigmoid->SetParLimits(0,0,100);
-    f_sigmoid->SetParameter(1,160);   f_sigmoid->SetParLimits(1,150,170);
+    f_sigmoid->SetParameter(0,0.03); f_sigmoid->SetParLimits(0,0,100);
+    f_sigmoid->SetParameter(1,160);   f_sigmoid->SetParLimits(1,100,300);
     f_sigmoid->SetParameter(2,.95);  f_sigmoid->SetParLimits(2,0,1); 
     //f_sigmoid->SetParameter(2,1);  f_sigmoid->SetParLimits(2,1,1); 
   } else if(fitFunction==4) {
-    f_sigmoid->SetParNames("k", "E_{c}","#varepsilon_{obs}","c_{0}","c_{1}","#nu");
+    f_sigmoid->SetParNames("k", "E_{c}","#varepsilon_{obs}","Q","#nu");
     f_sigmoid->SetParameter(0,.03);  f_sigmoid->SetParLimits(0,0,100);
-    f_sigmoid->SetParameter(1,160);  f_sigmoid->SetParLimits(1,150,170);
+    f_sigmoid->SetParameter(1,160);  f_sigmoid->SetParLimits(1,100,300);
     f_sigmoid->SetParameter(2,.95);  f_sigmoid->SetParLimits(2,0,1); 
-    f_sigmoid->SetParameter(3,1);    f_sigmoid->SetParLimits(3,0,1000); 
-    f_sigmoid->SetParameter(4,1);    f_sigmoid->SetParLimits(4,0,1000); 
-    f_sigmoid->SetParameter(5,1);    f_sigmoid->SetParLimits(5,0,100); 
+    f_sigmoid->SetParameter(3,1);    f_sigmoid->SetParLimits(3,0,10); 
+    f_sigmoid->SetParameter(4,1);    f_sigmoid->SetParLimits(4,0,100); 
   } else {
     printf("bad fit function\n");
     return;
@@ -408,7 +412,7 @@ void plotEfficiency(
   if     (fitFunction==1) formula->AddText("f(E_{T}^{miss}) = #varepsilon_{obs}#times #frac{1}{2} #(){1 + tanh(k[E_{T}^{miss}- E_{c}])} ");
   else if(fitFunction==2) formula->AddText("f(E_{T}^{miss}) = #varepsilon_{obs}#times #(){#frac{1}{2} + #frac{1}{#pi} arctan(#frac{k#pi}{2}[E_{T}^{miss}- E_{c}])} ");
   else if(fitFunction==3) formula->AddText("f(E_{T}^{miss}) = #varepsilon_{obs}#times #frac{1}{2} #(){1 + erf(#frac{k#sqrt{#pi}}{2}[E_{T}^{miss}- E_{c}])} ");
-  else if(fitFunction==4) formula->AddText("f(E_{T}^{miss}) = #varepsilon_{obs}#times #[]{c_{0} + c_{1} exp(-k[E_{T}^{miss}- E_{c}])}^{-1/#nu}");
+  else if(fitFunction==4) formula->AddText("f(E_{T}^{miss}) = #varepsilon_{obs}#times #[]{1 + Q exp(-k[E_{T}^{miss}- E_{c}])}^{-1/#nu}");
   formula->Draw("SAME");
   TPaveText *selectionPave = new TPaveText(0.12,0.77,.4,0.88, "NDC");
   selectionPave->SetFillColorAlpha(0,0.4);
@@ -428,14 +432,22 @@ void plotEfficiency(
   ps->SetY2NDC(0.78);
   cEff_met->Modified(); cEff_met->Update(); 
   
-  system("mkdir -p PandaAnalysis/VBF/triggers/plots");
-  cEff_metPhi_met   ->SaveAs(Form("PandaAnalysis/VBF/triggers/plots/hEff_metPhi_met_%s.pdf"   ,extra_string.Data()));     
-  cEff_jet1Pt_met   ->SaveAs(Form("PandaAnalysis/VBF/triggers/plots/hEff_jet1Pt_met_%s.pdf"   ,extra_string.Data()));     
-  cEff_jet1Eta_met  ->SaveAs(Form("PandaAnalysis/VBF/triggers/plots/hEff_jet1Eta_met_%s.pdf"  ,extra_string.Data()));      
-  cEff_leptonPt_met ->SaveAs(Form("PandaAnalysis/VBF/triggers/plots/hEff_leptonPt_met_%s.pdf" ,extra_string.Data()));       
-  cEff_met          ->SaveAs(Form("PandaAnalysis/VBF/triggers/plots/hEff_met_%s.pdf"          ,extra_string.Data())); 
-  if(mode=="vbf") cEff_jet2Eta_met  ->SaveAs(Form("PandaAnalysis/VBF/triggers/plots/hEff_jet2Eta_met_%s.pdf"  ,extra_string.Data()));      
-  if(mode=="vbf") cEff_mjj_met      ->SaveAs(Form("PandaAnalysis/VBF/triggers/plots/hEff_mjj_met_%s.pdf"      ,extra_string.Data()));  
+  system("mkdir -p MitVBFAnalysis/plots");
+  cEff_metPhi_met   ->SaveAs(Form("MitVBFAnalysis/plots/hEff_metPhi_met_%s.pdf"   ,extra_string.Data()));     
+  cEff_jet1Pt_met   ->SaveAs(Form("MitVBFAnalysis/plots/hEff_jet1Pt_met_%s.pdf"   ,extra_string.Data()));     
+  cEff_jet1Eta_met  ->SaveAs(Form("MitVBFAnalysis/plots/hEff_jet1Eta_met_%s.pdf"  ,extra_string.Data()));      
+  cEff_leptonPt_met ->SaveAs(Form("MitVBFAnalysis/plots/hEff_leptonPt_met_%s.pdf" ,extra_string.Data()));       
+  cEff_met          ->SaveAs(Form("MitVBFAnalysis/plots/hEff_met_%s_%s.pdf"       ,extra_string.Data(), fitFunctionName.Data())); 
+  if(mode=="vbf") cEff_jet2Eta_met  ->SaveAs(Form("MitVBFAnalysis/plots/hEff_jet2Eta_met_%s.pdf"  ,extra_string.Data()));      
+  if(mode=="vbf") cEff_mjj_met      ->SaveAs(Form("MitVBFAnalysis/plots/hEff_mjj_met_%s.pdf"      ,extra_string.Data()));  
+  
+  cEff_metPhi_met   ->SaveAs(Form("MitVBFAnalysis/plots/hEff_metPhi_met_%s.png"   ,extra_string.Data()));     
+  cEff_jet1Pt_met   ->SaveAs(Form("MitVBFAnalysis/plots/hEff_jet1Pt_met_%s.png"   ,extra_string.Data()));     
+  cEff_jet1Eta_met  ->SaveAs(Form("MitVBFAnalysis/plots/hEff_jet1Eta_met_%s.png"  ,extra_string.Data()));      
+  cEff_leptonPt_met ->SaveAs(Form("MitVBFAnalysis/plots/hEff_leptonPt_met_%s.png" ,extra_string.Data()));       
+  cEff_met          ->SaveAs(Form("MitVBFAnalysis/plots/hEff_met_%s_%s.png"       ,extra_string.Data(), fitFunctionName.Data())); 
+  if(mode=="vbf") cEff_jet2Eta_met  ->SaveAs(Form("MitVBFAnalysis/plots/hEff_jet2Eta_met_%s.png"  ,extra_string.Data()));      
+  if(mode=="vbf") cEff_mjj_met      ->SaveAs(Form("MitVBFAnalysis/plots/hEff_mjj_met_%s.png"      ,extra_string.Data()));  
 
 }
 

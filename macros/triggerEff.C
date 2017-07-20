@@ -26,38 +26,39 @@ bool debug=false
   float leptonPt, leptonEta, leptonPhi, pfMet, pfMetPhi, pfMetNoMu, pfMetNoMuPhi, jet1Pt, jet1Eta, jet1Phi, jet1M, jet1PtUp, jet1PtDown, jet2Pt, jet2Eta, jet2Phi, jet2M, jet2PtUp, jet2PtDown, jet3Pt, jet3Eta, jet3Phi, jet3M, jet3PtUp, jet3PtDown, jet4Pt, jet4Eta, jet4Phi, jet4M, jet4PtUp, jet4PtDown;
   unsigned nTau;
   // Create maps (filter name) -> (trigger object coordinate)
-  // The filter names are currently hard coded
+  // The filter names are currently hard coded, need to store this in a data file
   // The addresses to the values will be passed to effTree branches
   // For now, not storing Eta coordinates, and the filters we want Phi information for must also be in the Pt map
   std::map< TString, float > triggerObjectPts; std::map< TString, float > triggerObjectPhis;
+  triggerObjectPts["hltMET80"]=0;
   triggerObjectPts["hltMET90"]=0;
-  triggerObjectPts["hltMET100"]=0;
-  triggerObjectPts["hltMET110"]=0;
+  //triggerObjectPts["hltMET100"]=0;
+  //triggerObjectPts["hltMET110"]=0;
   triggerObjectPts["hltMETClean70"]=0;
   triggerObjectPts["hltMETClean80"]=0;
-  triggerObjectPts["hltMETClean90"]=0;
-  triggerObjectPts["hltMETClean100"]=0;
+  //triggerObjectPts["hltMETClean90"]=0;
+  //triggerObjectPts["hltMETClean100"]=0;
   triggerObjectPts["hltMHT80"]=0;
   triggerObjectPts["hltMHT90"]=0;
-  triggerObjectPts["hltMHT100"]=0;
-  triggerObjectPts["hltMHT110"]=0;
+  //triggerObjectPts["hltMHT100"]=0;
+  //triggerObjectPts["hltMHT110"]=0;
   triggerObjectPts["hltPFMHTNoMuTightID110"]=0;
   triggerObjectPts["hltPFMHTNoMuTightID120"]=0;
-  triggerObjectPts["hltPFMHTNoMuTightID130"]=0;
-  triggerObjectPts["hltPFMHTNoMuTightID140"]=0;
+  //triggerObjectPts["hltPFMHTNoMuTightID130"]=0;
+  //triggerObjectPts["hltPFMHTNoMuTightID140"]=0;
   triggerObjectPts["hltPFMETNoMu110"]=0;
   triggerObjectPts["hltPFMETNoMu120"]=0;
-  triggerObjectPts["hltPFMETNoMu130"]=0;
-  triggerObjectPts["hltPFMETNoMu140"]=0;
+  //triggerObjectPts["hltPFMETNoMu130"]=0;
+  //triggerObjectPts["hltPFMETNoMu140"]=0;
 
   triggerObjectPhis["hltMETClean70"]=0;
   triggerObjectPhis["hltMETClean80"]=0;
-  triggerObjectPhis["hltMETClean90"]=0;
-  triggerObjectPhis["hltMETClean100"]=0;
+  //triggerObjectPhis["hltMETClean90"]=0;
+  //triggerObjectPhis["hltMETClean100"]=0;
   triggerObjectPhis["hltMHT80"]=0;
   triggerObjectPhis["hltMHT90"]=0;
-  triggerObjectPhis["hltMHT100"]=0;
-  triggerObjectPhis["hltMHT110"]=0;
+  //triggerObjectPhis["hltMHT100"]=0;
+  //triggerObjectPhis["hltMHT110"]=0;
   
   // Declare the Tree and set up the branches.
   TTree *effTree = new TTree("effTree", "effTree");
@@ -105,33 +106,34 @@ bool debug=false
   
   effTree->Branch("hltMET80",                &triggerObjectPts["hltMET80"]               );
   effTree->Branch("hltMET90",                &triggerObjectPts["hltMET90"]               );
-  effTree->Branch("hltMET100",               &triggerObjectPts["hltMET100"]              );
-  effTree->Branch("hltMET110",               &triggerObjectPts["hltMET110"]              );
+  //effTree->Branch("hltMET100",               &triggerObjectPts["hltMET100"]              );
+  //effTree->Branch("hltMET110",               &triggerObjectPts["hltMET110"]              );
   effTree->Branch("hltMETClean70",           &triggerObjectPts["hltMETClean70"]          );
   effTree->Branch("hltMETClean80",           &triggerObjectPts["hltMETClean80"]          );
-  effTree->Branch("hltMETClean90",           &triggerObjectPts["hltMETClean90"]          );
-  effTree->Branch("hltMETClean100",          &triggerObjectPts["hltMETClean100"]         );
+  //effTree->Branch("hltMETClean90",           &triggerObjectPts["hltMETClean90"]          );
+  //effTree->Branch("hltMETClean100",          &triggerObjectPts["hltMETClean100"]         );
   effTree->Branch("hltMHT80",                &triggerObjectPts["hltMHT80"]               );
   effTree->Branch("hltMHT90",                &triggerObjectPts["hltMHT90"]               );
-  effTree->Branch("hltMHT100",               &triggerObjectPts["hltMHT100"]              );
-  effTree->Branch("hltMHT110",               &triggerObjectPts["hltMHT110"]              );
+  //effTree->Branch("hltMHT100",               &triggerObjectPts["hltMHT100"]              );
+  //effTree->Branch("hltMHT110",               &triggerObjectPts["hltMHT110"]              );
   effTree->Branch("hltPFMHTNoMuTightID110",  &triggerObjectPts["hltPFMHTNoMuTightID110"] );
   effTree->Branch("hltPFMHTNoMuTightID120",  &triggerObjectPts["hltPFMHTNoMuTightID120"] );
-  effTree->Branch("hltPFMHTNoMuTightID130",  &triggerObjectPts["hltPFMHTNoMuTightID130"] );
-  effTree->Branch("hltPFMHTNoMuTightID140",  &triggerObjectPts["hltPFMHTNoMuTightID140"] );
+  //effTree->Branch("hltPFMHTNoMuTightID130",  &triggerObjectPts["hltPFMHTNoMuTightID130"] );
+  //effTree->Branch("hltPFMHTNoMuTightID140",  &triggerObjectPts["hltPFMHTNoMuTightID140"] );
   effTree->Branch("hltPFMETNoMu110",         &triggerObjectPts["hltPFMETNoMu110"]        );
   effTree->Branch("hltPFMETNoMu120",         &triggerObjectPts["hltPFMETNoMu120"]        );
-  effTree->Branch("hltPFMETNoMu130",         &triggerObjectPts["hltPFMETNoMu130"]        );
-  effTree->Branch("hltPFMETNoMu140",         &triggerObjectPts["hltPFMETNoMu140"]        );
+  //effTree->Branch("hltPFMETNoMu130",         &triggerObjectPts["hltPFMETNoMu130"]        );
+  //effTree->Branch("hltPFMETNoMu140",         &triggerObjectPts["hltPFMETNoMu140"]        );
   effTree->Branch("hltMETClean70Phi",        &triggerObjectPhis["hltMETClean70"]      );
   effTree->Branch("hltMETClean80Phi",        &triggerObjectPhis["hltMETClean80"]      );
-  effTree->Branch("hltMETClean90Phi",        &triggerObjectPhis["hltMETClean90"]      );
-  effTree->Branch("hltMETClean100Phi",       &triggerObjectPhis["hltMETClean100"]     );
+  //effTree->Branch("hltMETClean90Phi",        &triggerObjectPhis["hltMETClean90"]      );
+  //effTree->Branch("hltMETClean100Phi",       &triggerObjectPhis["hltMETClean100"]     );
   effTree->Branch("hltMHT80Phi",             &triggerObjectPhis["hltMHT80"]           );
   effTree->Branch("hltMHT90Phi",             &triggerObjectPhis["hltMHT90"]           );
-  effTree->Branch("hltMHT100Phi",            &triggerObjectPhis["hltMHT100"]          );
-  effTree->Branch("hltMHT110Phi",            &triggerObjectPhis["hltMHT110"]          );
+  //effTree->Branch("hltMHT100Phi",            &triggerObjectPhis["hltMHT100"]          );
+  //effTree->Branch("hltMHT110Phi",            &triggerObjectPhis["hltMHT110"]          );
 
+  if(debug) printf("Initialized the tree successfully\n");
   TChain input("events");
   if(inputPath!="") {
     // Use a TChain to read one or several files as listed in the file located at inputPath
@@ -198,15 +200,15 @@ bool debug=false
     } else {
       metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight") );
       metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight") );
-      metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight") );
-      metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight") );
+      //metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight") );
+      //metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight") );
     }
   } else if(mode=="muons") {
     lepTriggerTokens.push_back( event.registerTrigger("HLT_IsoMu24") );
     metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight") );
     metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight") );
-    metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight") );
-    metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight") );
+    //metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight") );
+    //metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight") );
   }
   
   // Loop over all of the events in the TChain
@@ -218,6 +220,7 @@ bool debug=false
     jet3Pt=-1; jet3Eta=-1; jet3Phi=-1; jet3PtUp=-1; jet3PtDown=-1; jet4Pt=-1; jet4Eta=-1; jet4Phi=-1; jet4PtUp=-1; jet4PtDown=-1;
     nTau=0;
 
+    if(debug) printf("Run %u, LS %u, evt %lld:\n", event.runNumber, event.lumiNumber, event.eventNumber);
     // Check data certification
     bool certifiedEvent=false;
     std::pair<unsigned int, unsigned int> runLumi(event.runNumber, event.lumiNumber);      
@@ -426,16 +429,21 @@ bool debug=false
     // Store Phi as well for the ones we care about
     // Currently getting only the First trigger object for MET-like quantities,
     // but this logic should be reworked if you use it for a filter with more than 1 trigger object
-    panda::HLTObjectStore::HLTObjectVector theTriggerObjects; // Container for the trigger objects
+    if(debug) printf("Starting the filter objects loop\n");
     for( std::map<TString,float>::iterator iter = triggerObjectPts.begin(); iter != triggerObjectPts.end(); ++iter) {
       TString theFilterName = iter->first; // Get the filter name from the first half of the (Key)->(Value) pair
-      theTriggerObjects = event.triggerObjects.filterObjects(theFilterName.Data()); // filterObjects argument is const char*
+      if(debug) printf("Getting trigger objects for filter %s\n", theFilterName.Data());
+      panda::HLTObjectStore::HLTObjectVector theTriggerObjects = event.triggerObjects.filterObjects(theFilterName.Data()); // filterObjects argument is const char*
+      if(debug) printf("setting triggerObjectPts[%s] to -1\n", theFilterName.Data());
       triggerObjectPts[theFilterName] = -1.; // Set the dummy value
       bool recordPhi = (triggerObjectPhis.find(theFilterName) != triggerObjectPhis.end()); // Check if we are recording the phi for this filter
+      if(recordPhi && debug) printf("setting triggerObjectPhis[%s] to -1\n", theFilterName.Data());
       if(recordPhi) triggerObjectPhis[theFilterName]=-777.; // Set the dummy value
       if(theTriggerObjects.size() == 0) continue; // If no trigger objects for this filter, go onto the nextone
       
+      if(debug) printf("setting triggerObjectPts[%s] to %f\n", theFilterName.Data(), theTriggerObjects[0]->pt());
       triggerObjectPts[theFilterName]=theTriggerObjects[0]->pt();
+      if(recordPhi && debug) printf("setting triggerObjectPhis[%s] to %f\n", theFilterName.Data(), theTriggerObjects[0]->phi());
       if(recordPhi) triggerObjectPhis[theFilterName]=theTriggerObjects[0]->phi();
       if(theTriggerObjects.size() > 1) printf("WARNING: got multiple (%zu) trigger objects for filter %s\n", theTriggerObjects.size(), theFilterName.Data());
     }
@@ -457,7 +465,7 @@ bool debug=false
     eventNumber = event.eventNumber;
     effTree->Fill();  
     //printf("run %d ls %d evt %lld %s\n", event.runNumber, event.lumiNumber, event.eventNumber, ((TFile*)input.GetCurrentFile())->GetName()); 
-    printf("run %d ls %d evt %u %s\n", event.runNumber, event.lumiNumber, event.eventNumber, ((TFile*)input.GetCurrentFile())->GetName()); 
+    printf("recorded event: run %d ls %d evt %u in file %s\n", event.runNumber, event.lumiNumber, event.eventNumber, ((TFile*)input.GetCurrentFile())->GetName()); 
     
   }
   outputFile->cd();
