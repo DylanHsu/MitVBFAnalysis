@@ -6,150 +6,20 @@
 // Analyze the output using plotting scripts in  MitVBFAnalysis/plotting
 
 typedef std::map<UInt_t,std::vector<std::pair <UInt_t, UInt_t> > > MapType;
+string jsonFile = "MitVBFAnalysis/data/Cert_294927-300575_13TeV_PromptReco_Collisions17_JSON.txt";
 
 void triggerEff(
-TString mode="electrons",
+TString mode="metElectronRef",
 TString inputPath="",
 TString batchName="",
 bool type1=false,
-bool debug=false
+bool debug=false,
+TString customFilter=""
 ) {
-  string jsonFile = "PandaAnalysis/data/certs/Cert_294927-297723_13TeV_PromptReco_Collisions17_JSON.txt";
-  assert(mode=="electrons" || mode=="muons");
-  
-  // initialize output tree
-  TFile *outputFile = TFile::Open(("vbf_batchTree_triggerEff"+(batchName == "" ? "" : "_"+batchName)+".root"), "RECREATE", "", ROOT::CompressionSettings(ROOT::kZLIB,9));
-  // Declare the simple variables for the tree branches
+  assert(mode=="metElectronRef" || mode=="metMuonRef" || mode=="electronTnP" || mode=="photonPFHTRef" || mode=="photonL1Ref");
+
   UInt_t runNumber, lumiSection;
   ULong64_t eventNumber;
-  bool passMetTriggers, passJetMetCleaning, jet1ExtraClean, jet2ExtraClean, jet3ExtraClean, jet4ExtraClean;
-  float leptonPt, leptonEta, leptonPhi, pfMet, pfMetPhi, pfMetNoMu, pfMetNoMuPhi, jet1Pt, jet1Eta, jet1Phi, jet1M, jet1PtUp, jet1PtDown, jet2Pt, jet2Eta, jet2Phi, jet2M, jet2PtUp, jet2PtDown, jet3Pt, jet3Eta, jet3Phi, jet3M, jet3PtUp, jet3PtDown, jet4Pt, jet4Eta, jet4Phi, jet4M, jet4PtUp, jet4PtDown;
-  unsigned nTau;
-  // Create maps (filter name) -> (trigger object coordinate)
-  // The filter names are currently hard coded, need to store this in a data file
-  // The addresses to the values will be passed to effTree branches
-  // For now, not storing Eta coordinates, and the filters we want Phi information for must also be in the Pt map
-  std::map< TString, float > triggerObjectPts; std::map< TString, float > triggerObjectPhis;
-  triggerObjectPts["hltMET80"]=0;
-  triggerObjectPts["hltMET90"]=0;
-  //triggerObjectPts["hltMET100"]=0;
-  //triggerObjectPts["hltMET110"]=0;
-  triggerObjectPts["hltMETClean70"]=0;
-  triggerObjectPts["hltMETClean80"]=0;
-  //triggerObjectPts["hltMETClean90"]=0;
-  //triggerObjectPts["hltMETClean100"]=0;
-  triggerObjectPts["hltMHT80"]=0;
-  triggerObjectPts["hltMHT90"]=0;
-  //triggerObjectPts["hltMHT100"]=0;
-  //triggerObjectPts["hltMHT110"]=0;
-  triggerObjectPts["hltPFMHTNoMuTightID110"]=0;
-  triggerObjectPts["hltPFMHTNoMuTightID120"]=0;
-  //triggerObjectPts["hltPFMHTNoMuTightID130"]=0;
-  //triggerObjectPts["hltPFMHTNoMuTightID140"]=0;
-  triggerObjectPts["hltPFMETNoMu110"]=0;
-  triggerObjectPts["hltPFMETNoMu120"]=0;
-  //triggerObjectPts["hltPFMETNoMu130"]=0;
-  //triggerObjectPts["hltPFMETNoMu140"]=0;
-
-  triggerObjectPhis["hltMETClean70"]=0;
-  triggerObjectPhis["hltMETClean80"]=0;
-  //triggerObjectPhis["hltMETClean90"]=0;
-  //triggerObjectPhis["hltMETClean100"]=0;
-  triggerObjectPhis["hltMHT80"]=0;
-  triggerObjectPhis["hltMHT90"]=0;
-  //triggerObjectPhis["hltMHT100"]=0;
-  //triggerObjectPhis["hltMHT110"]=0;
-  
-  // Declare the Tree and set up the branches.
-  TTree *effTree = new TTree("effTree", "effTree");
-  effTree->Branch("runNumber"          , &runNumber         );
-  effTree->Branch("lumiSection"        , &lumiSection       );
-  effTree->Branch("eventNumber"        , &eventNumber       );
-  effTree->Branch("passMetTriggers"    , &passMetTriggers   );
-  effTree->Branch("passJetMetCleaning" , &passJetMetCleaning);
-  effTree->Branch("leptonPt"           , &leptonPt          );
-  effTree->Branch("leptonEta"          , &leptonEta         );
-  effTree->Branch("leptonPhi"          , &leptonPhi         );
-  effTree->Branch("pfMet"              , &pfMet             );
-  effTree->Branch("pfMetPhi"           , &pfMetPhi          );
-  effTree->Branch("pfMetNoMu"          , &pfMetNoMu         );
-  effTree->Branch("pfMetNoMuPhi"       , &pfMetNoMuPhi      );
-  effTree->Branch("jet1Pt"             , &jet1Pt            );
-  effTree->Branch("jet1Eta"            , &jet1Eta           );
-  effTree->Branch("jet1Phi"            , &jet1Phi           );
-  effTree->Branch("jet1M"              , &jet1Phi           );
-  //effTree->Branch("jet1PtUp"           , &jet1PtUp          );
-  //effTree->Branch("jet1PtDown"         , &jet1PtDown        );
-  effTree->Branch("jet1ExtraClean"     , &jet1ExtraClean    );
-  effTree->Branch("jet2Pt"             , &jet2Pt            );
-  effTree->Branch("jet2Eta"            , &jet2Eta           );
-  effTree->Branch("jet2Phi"            , &jet2Phi           );
-  effTree->Branch("jet2M"              , &jet2Phi           );
-  //effTree->Branch("jet2PtUp"           , &jet2PtUp          );
-  //effTree->Branch("jet2PtDown"         , &jet2PtDown        );
-  effTree->Branch("jet2ExtraClean"     , &jet2ExtraClean    );
-  effTree->Branch("jet3Pt"             , &jet2Pt            );
-  effTree->Branch("jet3Eta"            , &jet2Eta           );
-  effTree->Branch("jet3Phi"            , &jet2Phi           );
-  effTree->Branch("jet3M"              , &jet2Phi           );
-  //effTree->Branch("jet3PtUp"           , &jet2PtUp          );
-  //effTree->Branch("jet3PtDown"         , &jet2PtDown        );
-  effTree->Branch("jet3ExtraClean"     , &jet2ExtraClean    );
-  effTree->Branch("jet4Pt"             , &jet2Pt            );
-  effTree->Branch("jet4Eta"            , &jet2Eta           );
-  effTree->Branch("jet4Phi"            , &jet2Phi           );
-  effTree->Branch("jet4M"              , &jet2Phi           );
-  //effTree->Branch("jet4PtUp"           , &jet2PtUp          );
-  //effTree->Branch("jet4PtDown"         , &jet2PtDown        );
-  effTree->Branch("jet4ExtraClean"     , &jet2ExtraClean    );
-  effTree->Branch("nTau"               , &nTau              );
-  
-  effTree->Branch("hltMET80",                &triggerObjectPts["hltMET80"]               );
-  effTree->Branch("hltMET90",                &triggerObjectPts["hltMET90"]               );
-  //effTree->Branch("hltMET100",               &triggerObjectPts["hltMET100"]              );
-  //effTree->Branch("hltMET110",               &triggerObjectPts["hltMET110"]              );
-  effTree->Branch("hltMETClean70",           &triggerObjectPts["hltMETClean70"]          );
-  effTree->Branch("hltMETClean80",           &triggerObjectPts["hltMETClean80"]          );
-  //effTree->Branch("hltMETClean90",           &triggerObjectPts["hltMETClean90"]          );
-  //effTree->Branch("hltMETClean100",          &triggerObjectPts["hltMETClean100"]         );
-  effTree->Branch("hltMHT80",                &triggerObjectPts["hltMHT80"]               );
-  effTree->Branch("hltMHT90",                &triggerObjectPts["hltMHT90"]               );
-  //effTree->Branch("hltMHT100",               &triggerObjectPts["hltMHT100"]              );
-  //effTree->Branch("hltMHT110",               &triggerObjectPts["hltMHT110"]              );
-  effTree->Branch("hltPFMHTNoMuTightID110",  &triggerObjectPts["hltPFMHTNoMuTightID110"] );
-  effTree->Branch("hltPFMHTNoMuTightID120",  &triggerObjectPts["hltPFMHTNoMuTightID120"] );
-  //effTree->Branch("hltPFMHTNoMuTightID130",  &triggerObjectPts["hltPFMHTNoMuTightID130"] );
-  //effTree->Branch("hltPFMHTNoMuTightID140",  &triggerObjectPts["hltPFMHTNoMuTightID140"] );
-  effTree->Branch("hltPFMETNoMu110",         &triggerObjectPts["hltPFMETNoMu110"]        );
-  effTree->Branch("hltPFMETNoMu120",         &triggerObjectPts["hltPFMETNoMu120"]        );
-  //effTree->Branch("hltPFMETNoMu130",         &triggerObjectPts["hltPFMETNoMu130"]        );
-  //effTree->Branch("hltPFMETNoMu140",         &triggerObjectPts["hltPFMETNoMu140"]        );
-  effTree->Branch("hltMETClean70Phi",        &triggerObjectPhis["hltMETClean70"]      );
-  effTree->Branch("hltMETClean80Phi",        &triggerObjectPhis["hltMETClean80"]      );
-  //effTree->Branch("hltMETClean90Phi",        &triggerObjectPhis["hltMETClean90"]      );
-  //effTree->Branch("hltMETClean100Phi",       &triggerObjectPhis["hltMETClean100"]     );
-  effTree->Branch("hltMHT80Phi",             &triggerObjectPhis["hltMHT80"]           );
-  effTree->Branch("hltMHT90Phi",             &triggerObjectPhis["hltMHT90"]           );
-  //effTree->Branch("hltMHT100Phi",            &triggerObjectPhis["hltMHT100"]          );
-  //effTree->Branch("hltMHT110Phi",            &triggerObjectPhis["hltMHT110"]          );
-
-  if(debug) printf("Initialized the tree successfully\n");
-  TChain input("events");
-  if(inputPath!="") {
-    // Use a TChain to read one or several files as listed in the file located at inputPath
-    TFileCollection fc("fc","",inputPath);
-    input.AddFileInfoList((TCollection*)fc.GetList());
-  } else {
-    // If no inputPath is provided, loop over all the files for given dataset
-    if(mode=="electrons") {
-      TFileCollection fc("fc","","MitVBFAnalysis/data/files_SingleElectron2017_RunAB_july18.txt");
-      input.AddFileInfoList((TCollection*)fc.GetList());
-    } else if(mode=="muons") {
-      TFileCollection fc("fc","","MitVBFAnalysis/data/files_SingleMuon2017_RunAB_july18.txt");
-      input.AddFileInfoList((TCollection*)fc.GetList());
-    }
-  }
-  
   //Read json file into boost property tree
   MapType fMap;
   boost::property_tree::ptree jsonTree;
@@ -158,7 +28,7 @@ bool debug=false
   //Loop through boost property tree and fill the MapType structure with the list of good lumi
   //ranges for each run
   for (boost::property_tree::ptree::const_iterator it = jsonTree.begin(); it!=jsonTree.end(); ++it) {
-    UInt_t runNumber = boost::lexical_cast<UInt_t>(it->first);
+    runNumber = boost::lexical_cast<UInt_t>(it->first);
     MapType::mapped_type &lumiPairList = fMap[runNumber];
     boost::property_tree::ptree lumiPairListTree = it->second;
     for (boost::property_tree::ptree::const_iterator jt = lumiPairListTree.begin(); jt!=lumiPairListTree.end(); ++jt) {
@@ -170,18 +40,156 @@ bool debug=false
       }
     }
   }
-
   //If running in debug mode, dump run and lumi ranges from MapType structure to verify correct json parsing
-  if (debug) {
-    printf("Iterating over parsed JSON:\n");
-    for (MapType::const_iterator it = fMap.begin(); it != fMap.end(); ++it) {
-      printf("  Run %u:\n",it->first);
-      for (MapType::mapped_type::const_iterator jt = it->second.begin(); jt < it->second.end(); ++jt) {
-        printf("    Lumis %u - %u\n",jt->first,jt->second);
-      }
-    }
-
+  if (debug) {  printf("Iterating over parsed JSON:\n"); for (MapType::const_iterator it = fMap.begin(); it != fMap.end(); ++it) {
+    printf("  Run %u:\n",it->first);
+    for (MapType::mapped_type::const_iterator jt = it->second.begin(); jt < it->second.end(); ++jt) printf("    Lumis %u - %u\n",jt->first,jt->second);
+  }}
+  
+  TFile *outputFile = TFile::Open(("vbf_batchTree_triggerEff"+(batchName == "" ? "" : "_"+batchName)+".root"), "RECREATE", "", ROOT::CompressionSettings(ROOT::kZLIB,9));
+  // Declare the Tree and set up the branches.
+  TTree *effTree = new TTree("effTree", "effTree");
+  effTree->Branch("runNumber"          , &runNumber         );
+  effTree->Branch("lumiSection"        , &lumiSection       );
+  effTree->Branch("eventNumber"        , &eventNumber       );
+  // Declare the simple variables for the tree branches
+  bool passMetTriggers, passJetMetCleaning, jet1ExtraClean, jet2ExtraClean, jet3ExtraClean, jet4ExtraClean;
+  bool passElectronTrigger, passPhotonTriggers;
+  float lepton1Pt, lepton1Eta, lepton1Phi, lepton2Pt, lepton2Eta, lepton2Phi;
+  float photon1Pt, photon1Eta, photon1Phi;
+  float pfMet, pfMetPhi, pfMetNoMu, pfMetNoMuPhi;
+  float jet1Pt, jet1Eta, jet1Phi, jet1M, jet1PtUp, jet1PtDown, jet2Pt, jet2Eta, jet2Phi, jet2M, jet2PtUp, jet2PtDown, jet3Pt, jet3Eta, jet3Phi, jet3M, jet3PtUp, jet3PtDown, jet4Pt, jet4Eta, jet4Phi, jet4M, jet4PtUp, jet4PtDown;
+  unsigned nTau;
+  
+  // Create maps (filter name) -> (trigger object coordinate)
+  // The filter names are currently hard coded, need to store this in a data file
+  // The addresses to the values will be passed to effTree branches
+  // For now, not storing Eta coordinates, and the filters we want Phi information for must also be in the Pt map
+  std::map< TString, float > triggerObjectPts, triggerObjectEtas, triggerObjectPhis;
+  
+  // Initialize mode-specific maps and branches
+  if(mode=="metElectronRef"||mode=="metMuonRef") {
+    // trigger object map for met triggers
+    triggerObjectPts["hltMET80"]=0;
+    triggerObjectPts["hltMET90"]=0;
+    triggerObjectPts["hltMETClean70"]=0;
+    triggerObjectPts["hltMETClean80"]=0;
+    triggerObjectPts["hltMHT80"]=0;
+    triggerObjectPts["hltMHT90"]=0;
+    triggerObjectPts["hltPFMHTNoMuTightID110"]=0;
+    triggerObjectPts["hltPFMHTNoMuTightID120"]=0;
+    triggerObjectPts["hltPFMETNoMu110"]=0;
+    triggerObjectPts["hltPFMETNoMu120"]=0;
+    triggerObjectPhis["hltMETClean70"]=0;
+    triggerObjectPhis["hltMETClean80"]=0;
+    triggerObjectPhis["hltMHT80"]=0;
+    triggerObjectPhis["hltMHT90"]=0;
+    // specific tree branches
+    effTree->Branch("passMetTriggers"    , &passMetTriggers   );
+    effTree->Branch("passJetMetCleaning" , &passJetMetCleaning);
+    effTree->Branch("lepton1Pt"           , &lepton1Pt          );
+    effTree->Branch("lepton1Eta"          , &lepton1Eta         );
+    effTree->Branch("lepton1Phi"          , &lepton1Phi         );
+    effTree->Branch("pfMet"              , &pfMet             );
+    effTree->Branch("pfMetPhi"           , &pfMetPhi          );
+    effTree->Branch("pfMetNoMu"          , &pfMetNoMu         );
+    effTree->Branch("pfMetNoMuPhi"       , &pfMetNoMuPhi      );
+    effTree->Branch("jet1Pt"             , &jet1Pt            );
+    effTree->Branch("jet1Eta"            , &jet1Eta           );
+    effTree->Branch("jet1Phi"            , &jet1Phi           );
+    effTree->Branch("jet1M"              , &jet1Phi           );
+    effTree->Branch("jet1ExtraClean"     , &jet1ExtraClean    );
+    effTree->Branch("jet2Pt"             , &jet2Pt            );
+    effTree->Branch("jet2Eta"            , &jet2Eta           );
+    effTree->Branch("jet2Phi"            , &jet2Phi           );
+    effTree->Branch("jet2M"              , &jet2Phi           );
+    effTree->Branch("jet2ExtraClean"     , &jet2ExtraClean    );
+    effTree->Branch("jet3Pt"             , &jet2Pt            );
+    effTree->Branch("jet3Eta"            , &jet2Eta           );
+    effTree->Branch("jet3Phi"            , &jet2Phi           );
+    effTree->Branch("jet3M"              , &jet2Phi           );
+    effTree->Branch("jet3ExtraClean"     , &jet2ExtraClean    );
+    effTree->Branch("jet4Pt"             , &jet2Pt            );
+    effTree->Branch("jet4Eta"            , &jet2Eta           );
+    effTree->Branch("jet4Phi"            , &jet2Phi           );
+    effTree->Branch("jet4M"              , &jet2Phi           );
+    effTree->Branch("jet4ExtraClean"     , &jet2ExtraClean    );
+    effTree->Branch("nTau"               , &nTau              );
+    effTree->Branch("hltMET80",                &triggerObjectPts["hltMET80"]               );
+    effTree->Branch("hltMET90",                &triggerObjectPts["hltMET90"]               );
+    effTree->Branch("hltMETClean70",           &triggerObjectPts["hltMETClean70"]          );
+    effTree->Branch("hltMETClean80",           &triggerObjectPts["hltMETClean80"]          );
+    effTree->Branch("hltMHT80",                &triggerObjectPts["hltMHT80"]               );
+    effTree->Branch("hltMHT90",                &triggerObjectPts["hltMHT90"]               );
+    effTree->Branch("hltPFMHTNoMuTightID110",  &triggerObjectPts["hltPFMHTNoMuTightID110"] );
+    effTree->Branch("hltPFMHTNoMuTightID120",  &triggerObjectPts["hltPFMHTNoMuTightID120"] );
+    effTree->Branch("hltPFMETNoMu110",         &triggerObjectPts["hltPFMETNoMu110"]        );
+    effTree->Branch("hltPFMETNoMu120",         &triggerObjectPts["hltPFMETNoMu120"]        );
+    effTree->Branch("hltMETClean70Phi",        &triggerObjectPhis["hltMETClean70"]      );
+    effTree->Branch("hltMETClean80Phi",        &triggerObjectPhis["hltMETClean80"]      );
+    effTree->Branch("hltMHT80Phi",             &triggerObjectPhis["hltMHT80"]           );
+    effTree->Branch("hltMHT90Phi",             &triggerObjectPhis["hltMHT90"]           );
+  } else if(mode=="electronTnP") {
+    effTree->Branch("passElectronTrigger", &passElectronTrigger);
+    effTree->Branch("lepton1Pt"          , &lepton1Pt         );
+    effTree->Branch("lepton1Eta"         , &lepton1Eta        );
+    effTree->Branch("lepton1Phi"         , &lepton1Phi        );
+    effTree->Branch("lepton2Pt"          , &lepton2Pt         );
+    effTree->Branch("lepton2Eta"         , &lepton2Eta        );
+    effTree->Branch("lepton2Phi"         , &lepton2Phi        );
+    effTree->Branch("pfMet"              , &pfMet             );
+    effTree->Branch("pfMetPhi"           , &pfMetPhi          );
+    effTree->Branch("pfMetNoMu"          , &pfMetNoMu         );
+    effTree->Branch("pfMetNoMuPhi"       , &pfMetNoMuPhi      );
+    effTree->Branch("jet1Pt"             , &jet1Pt            );
+    effTree->Branch("jet1Eta"            , &jet1Eta           );
+    effTree->Branch("jet1Phi"            , &jet1Phi           );
+    effTree->Branch("jet1M"              , &jet1Phi           );
+    effTree->Branch("jet1ExtraClean"     , &jet1ExtraClean    );
+    effTree->Branch("jet2Pt"             , &jet2Pt            );
+    effTree->Branch("jet2Eta"            , &jet2Eta           );
+    effTree->Branch("jet2Phi"            , &jet2Phi           );
+    effTree->Branch("jet2M"              , &jet2Phi           );
+    effTree->Branch("jet2ExtraClean"     , &jet2ExtraClean    );
+    effTree->Branch("nTau"               , &nTau              );
+  } else if(mode=="photonPFHTRef") {
+    effTree->Branch("passPhotonTriggers" , &passPhotonTriggers);
+    effTree->Branch("photon1Pt"          , &photon1Pt         );
+    effTree->Branch("photon1Eta"         , &photon1Eta        );
+    effTree->Branch("photon1Phi"         , &photon1Phi        );
+    effTree->Branch("pfMet"              , &pfMet             );
+    effTree->Branch("pfMetPhi"           , &pfMetPhi          );
+    effTree->Branch("pfMetNoMu"          , &pfMetNoMu         );
+    effTree->Branch("pfMetNoMuPhi"       , &pfMetNoMuPhi      );
+    effTree->Branch("jet1Pt"             , &jet1Pt            );
+    effTree->Branch("jet1Eta"            , &jet1Eta           );
+    effTree->Branch("jet1Phi"            , &jet1Phi           );
+    effTree->Branch("jet1M"              , &jet1Phi           );
+    effTree->Branch("jet1ExtraClean"     , &jet1ExtraClean    );
+    effTree->Branch("jet2Pt"             , &jet2Pt            );
+    effTree->Branch("jet2Eta"            , &jet2Eta           );
+    effTree->Branch("jet2Phi"            , &jet2Phi           );
+    effTree->Branch("jet2M"              , &jet2Phi           );
+    effTree->Branch("jet2ExtraClean"     , &jet2ExtraClean    );
+    effTree->Branch("nTau"               , &nTau              );
   }
+  if(debug) printf("Initialized the tree successfully\n");
+  TChain input("events");
+  if(inputPath!="") {
+    // Use a TChain to read one or several files as listed in the file located at inputPath
+    TFileCollection fc("fc","",inputPath);
+    input.AddFileInfoList((TCollection*)fc.GetList());
+  } else {
+    // If no inputPath is provided, loop over all the files for given dataset
+    if(mode=="metElectronRef") {
+      TFileCollection fc("fc","","MitVBFAnalysis/data/files_SingleElectron2017_RunAB_july18.txt");
+      input.AddFileInfoList((TCollection*)fc.GetList());
+    } else if(mode=="metMuonRef") {
+      TFileCollection fc("fc","","MitVBFAnalysis/data/files_SingleMuon2017_RunAB_july18.txt");
+      input.AddFileInfoList((TCollection*)fc.GetList());
+    } else return;
+  }
+  
  
   // Initialize the Panda event object
   panda::Event event;
@@ -189,26 +197,34 @@ bool debug=false
   event.setAddress(input, {"caloMet", "chsAK4Jets", "electrons", "muons", "pfMet", "photons", "taus", "triggers", "triggerObjects", "runNumber", "lumiNumber", "eventNumber", "metFilters"});
   
   // Register the trigger tokens for the reference and test triggers
-  vector<unsigned> lepTriggerTokens, metTriggerTokens;
-  if (mode=="electrons") {
-    lepTriggerTokens.push_back( event.registerTrigger("HLT_Ele35_WPTight_Gsf") );
+  vector<unsigned> refTriggerTokens, testTriggerTokens;
+  if (mode=="metElectronRef") {
+    refTriggerTokens.push_back( event.registerTrigger("HLT_Ele35_WPTight_Gsf") );
     if(type1) {
-      metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETTypeOne110_PFMHT110_IDTight") );
-      metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETTypeOne120_PFMHT120_IDTight") );
-      metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETTypeOne130_PFMHT130_IDTight") );
-      metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETTypeOne140_PFMHT140_IDTight") );
+      testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETTypeOne110_PFMHT110_IDTight") );
+      testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETTypeOne120_PFMHT120_IDTight") );
+      testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETTypeOne130_PFMHT130_IDTight") );
+      testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETTypeOne140_PFMHT140_IDTight") );
     } else {
-      metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight") );
-      metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight") );
-      //metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight") );
-      //metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight") );
+      testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight") );
+      testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight") );
+      //testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight") );
+      //testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight") );
     }
-  } else if(mode=="muons") {
-    lepTriggerTokens.push_back( event.registerTrigger("HLT_IsoMu24") );
-    metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight") );
-    metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight") );
-    //metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight") );
-    //metTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight") );
+  } else if(mode=="metMuonRef") {
+    refTriggerTokens.push_back( event.registerTrigger("HLT_IsoMu24") );
+    testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight") );
+    testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight") );
+    //testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight") );
+    //testTriggerTokens.push_back( event.registerTrigger("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight") );
+  } else if(mode=="electronTnP") {
+    refTriggerTokens.push_back( event.registerTrigger("HLT_Ele35_WPTight_Gsf") );
+    testTriggerTokens.push_back( event.registerTrigger("HLT_Ele115_CaloIdVT_GsfTrkIdT") );
+  } else if(mode=="photonPFHTRef") {
+    refTriggerTokens.push_back( event.registerTrigger("HLT_PFHT590"));
+    refTriggerTokens.push_back( event.registerTrigger("HLT_PFHT680"));
+    refTriggerTokens.push_back( event.registerTrigger("HLT_PFHT780"));
+    testTriggerTokens.push_back( event.registerTrigger("HLT_Photon200"));
   }
   
   // Loop over all of the events in the TChain
@@ -216,7 +232,7 @@ bool debug=false
   while (event.getEntry(input, iEntry++) > 0) {
     // Reset branches
     passMetTriggers=false; passJetMetCleaning=false; jet1ExtraClean=false; jet2ExtraClean=false; jet3ExtraClean=false; jet4ExtraClean=false;
-    leptonPt=-1; leptonEta=-1; leptonPhi=-1; pfMetNoMu=-1; pfMetNoMuPhi=-1; jet1Pt=-1; jet1Eta=-1; jet1Phi=-1; jet1PtUp=-1; jet1PtDown=-1; jet2Pt=-1; jet2Eta=-1; jet2Phi=-1; jet2PtUp=-1; jet2PtDown=-1;
+    lepton1Pt=-1; lepton1Eta=-1; lepton1Phi=-1; pfMetNoMu=-1; pfMetNoMuPhi=-1; jet1Pt=-1; jet1Eta=-1; jet1Phi=-1; jet1PtUp=-1; jet1PtDown=-1; jet2Pt=-1; jet2Eta=-1; jet2Phi=-1; jet2PtUp=-1; jet2PtDown=-1;
     jet3Pt=-1; jet3Eta=-1; jet3Phi=-1; jet3PtUp=-1; jet3PtDown=-1; jet4Pt=-1; jet4Eta=-1; jet4Phi=-1; jet4PtUp=-1; jet4PtDown=-1;
     nTau=0;
 
@@ -248,24 +264,25 @@ bool debug=false
       !event.metFilters.badPFMuons &&
       !event.metFilters.badChargedHadrons
     );
-    if(!passMetFilters) { if(debug) printf("failed met filters\n"); continue; }
+    if((mode=="metElectronRef"||mode=="metMuonRef") && !passMetFilters) { if(debug) printf("failed met filters\n"); continue; }
     bool passPfCaloBalance=(
       TMath::Abs(event.pfMet.pt - event.caloMet.pt) / event.pfMet.pt < 0.5
     );
-    if(!passPfCaloBalance) { if (debug) printf("failed pf calo balance\n"); continue; }
+    if((mode=="metElectronRef"||mode=="metMuonRef") && !passPfCaloBalance) { if (debug) printf("failed pf calo balance\n"); continue; }
 
-    // Require lepton trigger
-    bool passLepTriggers=false;
-    for(unsigned i=0; i<lepTriggerTokens.size() && !passLepTriggers; i++) if(event.triggerFired(lepTriggerTokens[i])) passLepTriggers=true;
-    if(!passLepTriggers) {  if(debug) printf("failed lepton triggers\n"); continue; }
-    
+    // Require reference trigger
+    bool passRefTriggers=false;
+    for(unsigned i=0; i<refTriggerTokens.size() && !passRefTriggers; i++) if(event.triggerFired(refTriggerTokens[i])) passRefTriggers=true;
+    if(!passRefTriggers) {  if(debug) printf("failed reference triggers\n"); continue; }
+
     // Begin finding leptons
     std::vector<panda::Lepton*> looseLeps, tightLeps; // Fakeable object and tight leptons
     std::vector<panda::Particle*> matchLeps, matchPhos;
-    std::vector<bool> tightLepIsTriggerMatched;
+    std::vector<panda::Photon*> tightPhos;
+    std::vector<bool> tightLepIsTriggerMatched, tightPhoIsTriggerMatched;
 
     // Find veto and tight electrons
-    if(mode=="electrons") for (auto& ele : event.electrons) {
+    if(mode=="metElectronRef"||mode=="electronTnP") for (auto& ele : event.electrons) {
      float pt = ele.pt(); float eta = ele.eta(); float aeta = fabs(eta);
       if (pt<=10 || aeta>2.5 || (aeta>1.4442 && aeta<1.566)) // electron acceptance cuts
         continue;
@@ -283,7 +300,7 @@ bool debug=false
     TVector2 vMET, vMETNoMu;
     vMET.SetMagPhi(event.pfMet.pt, event.pfMet.phi);
     vMETNoMu = vMET; // initialize Met no Mu vector as just the PF MET
-    if(mode=="muons") for (auto& mu : event.muons) {
+    if(mode=="metMuonRef") for (auto& mu : event.muons) {
       float pt = mu.pt(); float eta = mu.eta(); float aeta = fabs(eta);
       if (pt<=10 || aeta>2.4) continue; //muon acceptance cuts
       if (!mu.loose)  continue;
@@ -308,14 +325,18 @@ bool debug=false
       if (IsMatched(&matchLeps,0.16,tau.eta(),tau.phi()))  continue;
       nTau++;
     }
-    if(nTau>1) { if(debug) printf("failed tau veto"); continue; }
+    if((mode=="metElectronRef"||mode=="metMuonRef") && nTau>0) { if(debug) printf("failed tau veto"); continue; }
     // End finding leptons
     
     // Only consider events with exactly one lepton which is tight, apply extra lepton veto
-    if(tightLeps.size()!=1 || looseLeps.size()!=tightLeps.size()) continue;
+    if((mode=="metElectronRef" || mode=="metMuonRef") && (tightLeps.size()!=1 || looseLeps.size()!=tightLeps.size())) continue;
+    if(mode=="electronTnP"  && (tightLeps.size()!=2 || looseLeps.size()!=tightLeps.size())) continue;
 
     // Require a trigger matched lepton
-    bool matchedTriggerObject= (tightLepIsTriggerMatched[0]);
+    bool matchedTriggerObject=false;
+    if(mode=="metElectronRef"||mode=="metMuonRef") matchedTriggerObject = (tightLepIsTriggerMatched[0]);
+    if(mode=="electronTnP") matchedTriggerObject = (tightLepIsTriggerMatched[0] || tightLepIsTriggerMatched[1]);
+    if(mode=="photonPFHTRef") matchedTriggerObject=true;
     if(!matchedTriggerObject) { if(debug) printf("failed trigger object matching\n"); continue; }
     
     // find photons (needed for jet cleaning)
@@ -335,8 +356,14 @@ bool debug=false
         pt>175 /*&& fabs(eta)<1.4442*/ ) { // apply eta cut offline
         matchPhos.push_back(&pho);
       }
+      if(mode=="photonPFHTRef" && pho.medium && fabs(eta)<1.4442) {
+        tightPhos.push_back(&pho);
+        tightPhoIsTriggerMatched.push_back(pho.triggerMatch[panda::Photon::fPh200]);
+      }
     }
 
+    if(mode=="photonPFHTRef" && tightPhos.size()==0) { if(debug) printf("no suitable photons\n"); continue; }
+    
     // Look for jets 
     panda::JetCollection* jets(0);
     jets = &event.chsAK4Jets;
@@ -418,54 +445,135 @@ bool debug=false
       iJet++;
     } //end loop over jets
     
-    // July 17 "Update V2 to GRun/V86 HLT/V293 "  CMSSW_9_3_X
-    // https://github.com/cms-sw/cmssw/commit/eed72a09f9fc4a775f959d7a556abc6fa017a6d7
-    // fragment.HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v12 = cms.Path( fragment.HLTBeginSequence + fragment.hltL1sAllETMHadSeeds + fragment.hltPrePFMETNoMu110PFMHTNoMu110IDTight + fragment.HLTRecoMETSequence + fragment.hltMET80 + fragment.HLTHBHENoiseCleanerSequence + fragment.hltMetClean + fragment.hltMETClean70 + fragment.HLTAK4CaloJetsSequence + fragment.hltMht + fragment.hltMHT80 + fragment.HLTAK4PFJetsSequence + fragment.hltPFMHTNoMuTightID + fragment.hltPFMHTNoMuTightID110 + fragment.hltParticleFlowNoMu + fragment.hltPFMETNoMuProducer + fragment.hltPFMETNoMu110 + fragment.HLTEndSequence )
-    // fragment.HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v12 = cms.Path( fragment.HLTBeginSequence + fragment.hltL1sAllETMHadSeeds + fragment.hltPrePFMETNoMu120PFMHTNoMu120IDTight + fragment.HLTRecoMETSequence + fragment.hltMET90 + fragment.HLTHBHENoiseCleanerSequence + fragment.hltMetClean + fragment.hltMETClean80 + fragment.HLTAK4CaloJetsSequence + fragment.hltMht + fragment.hltMHT90 + fragment.HLTAK4PFJetsSequence + fragment.hltPFMHTNoMuTightID + fragment.hltPFMHTNoMuTightID120 + fragment.hltParticleFlowNoMu + fragment.hltPFMETNoMuProducer + fragment.hltPFMETNoMu120 + fragment.HLTEndSequence )
-    // fragment.HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v11 = cms.Path( fragment.HLTBeginSequence + fragment.hltL1sAllETMHadSeeds + fragment.hltPrePFMETNoMu130PFMHTNoMu130IDTight + fragment.HLTRecoMETSequence + fragment.hltMET100 + fragment.HLTHBHENoiseCleanerSequence + fragment.hltMetClean + fragment.hltMETClean90 + fragment.HLTAK4CaloJetsSequence + fragment.hltMht + fragment.hltMHT100 + fragment.HLTAK4PFJetsSequence + fragment.hltPFMHTNoMuTightID + fragment.hltPFMHTNoMuTightID130 + fragment.hltParticleFlowNoMu + fragment.hltPFMETNoMuProducer + fragment.hltPFMETNoMu130 + fragment.HLTEndSequence )
-    // fragment.HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v11 = cms.Path( fragment.HLTBeginSequence + fragment.hltL1sAllETMHadSeeds + fragment.hltPrePFMETNoMu140PFMHTNoMu140IDTight + fragment.HLTRecoMETSequence + fragment.hltMET110 + fragment.HLTHBHENoiseCleanerSequence + fragment.hltMetClean + fragment.hltMETClean100 + fragment.HLTAK4CaloJetsSequence + fragment.hltMht + fragment.hltMHT110 + fragment.HLTAK4PFJetsSequence + fragment.hltPFMHTNoMuTightID + fragment.hltPFMHTNoMuTightID140 + fragment.hltParticleFlowNoMu + fragment.hltPFMETNoMuProducer + fragment.hltPFMETNoMu140 + fragment.HLTEndSequence )
-
-    // Loop over the map of trigger object Pts and store them
-    // Store Phi as well for the ones we care about
-    // Currently getting only the First trigger object for MET-like quantities,
-    // but this logic should be reworked if you use it for a filter with more than 1 trigger object
-    if(debug) printf("Starting the filter objects loop\n");
-    for( std::map<TString,float>::iterator iter = triggerObjectPts.begin(); iter != triggerObjectPts.end(); ++iter) {
-      TString theFilterName = iter->first; // Get the filter name from the first half of the (Key)->(Value) pair
-      if(debug) printf("Getting trigger objects for filter %s\n", theFilterName.Data());
-      panda::HLTObjectStore::HLTObjectVector theTriggerObjects = event.triggerObjects.filterObjects(theFilterName.Data()); // filterObjects argument is const char*
-      if(debug) printf("setting triggerObjectPts[%s] to -1\n", theFilterName.Data());
-      triggerObjectPts[theFilterName] = -1.; // Set the dummy value
-      bool recordPhi = (triggerObjectPhis.find(theFilterName) != triggerObjectPhis.end()); // Check if we are recording the phi for this filter
-      if(recordPhi && debug) printf("setting triggerObjectPhis[%s] to -1\n", theFilterName.Data());
-      if(recordPhi) triggerObjectPhis[theFilterName]=-777.; // Set the dummy value
-      if(theTriggerObjects.size() == 0) continue; // If no trigger objects for this filter, go onto the nextone
-      
-      if(debug) printf("setting triggerObjectPts[%s] to %f\n", theFilterName.Data(), theTriggerObjects[0]->pt());
-      triggerObjectPts[theFilterName]=theTriggerObjects[0]->pt();
-      if(recordPhi && debug) printf("setting triggerObjectPhis[%s] to %f\n", theFilterName.Data(), theTriggerObjects[0]->phi());
-      if(recordPhi) triggerObjectPhis[theFilterName]=theTriggerObjects[0]->phi();
-      if(theTriggerObjects.size() > 1) printf("WARNING: got multiple (%zu) trigger objects for filter %s\n", theTriggerObjects.size(), theFilterName.Data());
-    }
-
-    // Record if the event pass the MET triggers
-    passMetTriggers=false;
-    for(unsigned i=0; i<metTriggerTokens.size() && !passMetTriggers; i++) if(event.triggerFired(metTriggerTokens[i])) passMetTriggers=true;
-    
-    leptonPt=tightLeps[0]->pt();
-    leptonEta=tightLeps[0]->eta();
-    leptonPhi=tightLeps[0]->phi();
     pfMetNoMu=vMETNoMu.Mod();
     pfMetNoMuPhi=vMETNoMu.Phi();
     pfMet=event.pfMet.pt;
     pfMetPhi=event.pfMet.phi;
-    
     runNumber = event.runNumber;
     lumiSection = event.lumiNumber;
     eventNumber = event.eventNumber;
-    effTree->Fill();  
+    
+    if(mode=="metElectronRef" || mode=="metMuonRef") {
+      // July 17 "Update V2 to GRun/V86 HLT/V293 "  CMSSW_9_3_X
+      // https://github.com/cms-sw/cmssw/commit/eed72a09f9fc4a775f959d7a556abc6fa017a6d7
+      // fragment.HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v12 = cms.Path( fragment.HLTBeginSequence + fragment.hltL1sAllETMHadSeeds + fragment.hltPrePFMETNoMu110PFMHTNoMu110IDTight + fragment.HLTRecoMETSequence + fragment.hltMET80 + fragment.HLTHBHENoiseCleanerSequence + fragment.hltMetClean + fragment.hltMETClean70 + fragment.HLTAK4CaloJetsSequence + fragment.hltMht + fragment.hltMHT80 + fragment.HLTAK4PFJetsSequence + fragment.hltPFMHTNoMuTightID + fragment.hltPFMHTNoMuTightID110 + fragment.hltParticleFlowNoMu + fragment.hltPFMETNoMuProducer + fragment.hltPFMETNoMu110 + fragment.HLTEndSequence )
+      // fragment.HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v12 = cms.Path( fragment.HLTBeginSequence + fragment.hltL1sAllETMHadSeeds + fragment.hltPrePFMETNoMu120PFMHTNoMu120IDTight + fragment.HLTRecoMETSequence + fragment.hltMET90 + fragment.HLTHBHENoiseCleanerSequence + fragment.hltMetClean + fragment.hltMETClean80 + fragment.HLTAK4CaloJetsSequence + fragment.hltMht + fragment.hltMHT90 + fragment.HLTAK4PFJetsSequence + fragment.hltPFMHTNoMuTightID + fragment.hltPFMHTNoMuTightID120 + fragment.hltParticleFlowNoMu + fragment.hltPFMETNoMuProducer + fragment.hltPFMETNoMu120 + fragment.HLTEndSequence )
+      // fragment.HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v11 = cms.Path( fragment.HLTBeginSequence + fragment.hltL1sAllETMHadSeeds + fragment.hltPrePFMETNoMu130PFMHTNoMu130IDTight + fragment.HLTRecoMETSequence + fragment.hltMET100 + fragment.HLTHBHENoiseCleanerSequence + fragment.hltMetClean + fragment.hltMETClean90 + fragment.HLTAK4CaloJetsSequence + fragment.hltMht + fragment.hltMHT100 + fragment.HLTAK4PFJetsSequence + fragment.hltPFMHTNoMuTightID + fragment.hltPFMHTNoMuTightID130 + fragment.hltParticleFlowNoMu + fragment.hltPFMETNoMuProducer + fragment.hltPFMETNoMu130 + fragment.HLTEndSequence )
+      // fragment.HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v11 = cms.Path( fragment.HLTBeginSequence + fragment.hltL1sAllETMHadSeeds + fragment.hltPrePFMETNoMu140PFMHTNoMu140IDTight + fragment.HLTRecoMETSequence + fragment.hltMET110 + fragment.HLTHBHENoiseCleanerSequence + fragment.hltMetClean + fragment.hltMETClean100 + fragment.HLTAK4CaloJetsSequence + fragment.hltMht + fragment.hltMHT110 + fragment.HLTAK4PFJetsSequence + fragment.hltPFMHTNoMuTightID + fragment.hltPFMHTNoMuTightID140 + fragment.hltParticleFlowNoMu + fragment.hltPFMETNoMuProducer + fragment.hltPFMETNoMu140 + fragment.HLTEndSequence )
+
+      // Loop over the map of trigger object Pts and store them
+      // Store Phi as well for the ones we care about
+      // Currently getting only the First trigger object for MET-like quantities,
+      // but this logic should be reworked if you use it for a filter with more than 1 trigger object
+      if(debug) printf("Starting the filter objects loop\n");
+      for( std::map<TString,float>::iterator iter = triggerObjectPts.begin(); iter != triggerObjectPts.end(); ++iter) {
+        TString theFilterName = iter->first; // Get the filter name from the first half of the (Key)->(Value) pair
+        if(debug) printf("Getting trigger objects for filter %s\n", theFilterName.Data());
+        panda::HLTObjectStore::HLTObjectVector theTriggerObjects = event.triggerObjects.filterObjects(theFilterName.Data()); // filterObjects argument is const char*
+        if(debug) printf("setting triggerObjectPts[%s] to -1\n", theFilterName.Data());
+        triggerObjectPts[theFilterName] = -1.; // Set the dummy value
+        bool recordPhi = (triggerObjectPhis.find(theFilterName) != triggerObjectPhis.end()); // Check if we are recording the phi for this filter
+        if(recordPhi && debug) printf("setting triggerObjectPhis[%s] to -1\n", theFilterName.Data());
+        if(recordPhi) triggerObjectPhis[theFilterName]=-777.; // Set the dummy value
+        if(theTriggerObjects.size() == 0) continue; // If no trigger objects for this filter, go onto the nextone
+        
+        if(debug) printf("setting triggerObjectPts[%s] to %f\n", theFilterName.Data(), theTriggerObjects[0]->pt());
+        triggerObjectPts[theFilterName]=theTriggerObjects[0]->pt();
+        if(recordPhi && debug) printf("setting triggerObjectPhis[%s] to %f\n", theFilterName.Data(), theTriggerObjects[0]->phi());
+        if(recordPhi) triggerObjectPhis[theFilterName]=theTriggerObjects[0]->phi();
+        if(theTriggerObjects.size() > 1) printf("WARNING: got multiple (%zu) trigger objects for filter %s\n", theTriggerObjects.size(), theFilterName.Data());
+      }
+
+      // Record if the event pass the MET triggers
+      passMetTriggers=false;
+      for(unsigned i=0; i<testTriggerTokens.size() && !passMetTriggers; i++) if(event.triggerFired(testTriggerTokens[i])) passMetTriggers=true;
+      lepton1Pt=tightLeps[0]->pt();
+      lepton1Eta=tightLeps[0]->eta();
+      lepton1Phi=tightLeps[0]->phi();
+      lepton2Pt=-1;
+      lepton2Eta=-10;
+      lepton2Phi=-10;
+      effTree->Fill();  
+      if(debug) printf("recorded event: run %d ls %d evt %u in file %s\n", event.runNumber, event.lumiNumber, event.eventNumber, ((TFile*)input.GetCurrentFile())->GetName()); 
+    } else if(mode=="electronTnP") {
+      // Try to trigger match at least one electron
+      /*
+      bool isTriggerMatched=false;
+      passElectronTrigger=false; // test leg passes trigger
+      panda::HLTObjectStore::HLTObjectVector theTriggerObjects = event.triggerObjects.filterObjects(theFilterName.Data());
+      if(theTriggerObjects.size()==0) continue;
+      TLorentzVector triggerObject, recoElectron;
+      // NEED TO CHECK THIS LOGIC
+      for(unsigned i=0; i<theTriggerObjects.size(); i++) {
+        triggerObject.SetPtEtaPhiM(theTriggerObjects[i]->pt(), theTriggerObjects[i]->eta(), theTriggerObjects[i]->phi(), theTriggerObjects[i]->m());
+        for(unsigned j=0; j<tightLeps.size(); j++) {
+          recoElectron.SetPtEtaPhiM(tightLeps[j]->pt(), tightLeps[j]->eta(), tightLeps[j]->phi(), 0.000511);
+          double dr=recoElectron.DeltaR(triggerObject);
+          if(isTriggerMatched && dr<0.1) passElectronTrigger=true;
+          else if(dr<0.1) isTriggerMatched=true;
+        }
+      }*/
+      //TString theFilterName="hltEle35noerWPTightGsfTrackIsoFilter"; // last filter for Ele35, hardcoded
+      TString theFilterName="hltEle115CaloIdVTGsfTrkIdTGsfDphiFilter";
+      bool useFilterName=true;
+      //if(customFilter!="") theFilterName=customFilter; useFilterName=true;
+      panda::HLTObjectStore::HLTObjectVector theTriggerObjects;
+      bool triggerFired;
+      if(useFilterName) {
+        triggerFired=false;
+        // check if the trigger fired at all
+        for(unsigned i=0; i<testTriggerTokens.size() && !triggerFired; i++) {
+          if(event.triggerFired(testTriggerTokens[i])) triggerFired=true;
+        }
+        if(!triggerFired) { if(debug) printf("test triggers did not fire\n");
+        } else {
+          theTriggerObjects=event.triggerObjects.filterObjects(theFilterName.Data());
+          if(theTriggerObjects.size()==0) { if(debug) printf("no trigger objects to match to for filter %s\n", theFilterName.Data()); }
+          else { if(debug) printf("found %d trigger objects for filter %s\n", theTriggerObjects.size(), theFilterName.Data() ); }
+        }
+      }
+      for(unsigned i=0; i<tightLeps.size(); i++) { // tag loop
+        if(!tightLepIsTriggerMatched[i]) continue;
+        for(unsigned j=0; j<tightLeps.size(); j++) { // probe loop
+          passElectronTrigger=false;
+          if(j==i) continue;
+          if(!useFilterName) passElectronTrigger=tightLepIsTriggerMatched[j];
+          
+          else if(theTriggerObjects.size()>0 && triggerFired) {
+            TLorentzVector triggerObject, recoElectron;
+            recoElectron.SetPtEtaPhiM(tightLeps[j]->pt(), tightLeps[j]->eta(), tightLeps[j]->phi(), 0.000511); // create 4-vector for probe lepton
+            // NEED TO CHECK THIS LOGIC
+            for(unsigned k=0; k<theTriggerObjects.size(); k++) {
+              // create 4-vector for trigger object
+              triggerObject.SetPtEtaPhiM(theTriggerObjects[k]->pt(), theTriggerObjects[k]->eta(), theTriggerObjects[k]->phi(), theTriggerObjects[k]->m());
+              double dr=recoElectron.DeltaR(triggerObject);
+              if(dr<0.1) passElectronTrigger=true;
+            }
+          }
+          lepton1Pt  = tightLeps[i]->pt();
+          lepton1Eta = tightLeps[i]->eta();
+          lepton1Phi = tightLeps[i]->phi();
+          lepton2Pt  = tightLeps[j]->pt();
+          lepton2Eta = tightLeps[j]->eta();
+          lepton2Phi = tightLeps[j]->phi();
+          effTree->Fill();
+          if(debug) {
+            printf("recorded event: run %d ls %d evt %u in file %s\n", event.runNumber, event.lumiNumber, event.eventNumber, ((TFile*)input.GetCurrentFile())->GetName()); 
+            printf("tag pt/eta/phi: (%f,%f,%f) probe pt/eta/phi: (%f,%f,%f)\n", tightLeps[i]->pt(), tightLeps[i]->eta(), tightLeps[i]->phi(), tightLeps[j]->pt(), tightLeps[j]->eta(), tightLeps[j]->phi());
+          }
+        }
+      }
+    } else if(mode=="photonPFHTRef") {
+      passPhotonTriggers=false;
+      for(unsigned i=0; i<testTriggerTokens.size() && !passPhotonTriggers; i++) if(event.triggerFired(testTriggerTokens[i])) passPhotonTriggers=true;
+      photon1Pt = tightPhos[0]->pt();
+      photon1Eta = tightPhos[0]->eta();
+      photon1Phi = tightPhos[0]->phi();
+      effTree->Fill();
+      if(debug) printf("recorded event: run %d ls %d evt %u in file %s\n", event.runNumber, event.lumiNumber, event.eventNumber, ((TFile*)input.GetCurrentFile())->GetName()); 
+
+    }
     //printf("run %d ls %d evt %lld %s\n", event.runNumber, event.lumiNumber, event.eventNumber, ((TFile*)input.GetCurrentFile())->GetName()); 
-    printf("recorded event: run %d ls %d evt %u in file %s\n", event.runNumber, event.lumiNumber, event.eventNumber, ((TFile*)input.GetCurrentFile())->GetName()); 
     
   }
   outputFile->cd();
